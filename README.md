@@ -256,11 +256,6 @@ let (sql, args) = build_named(
 assert!(sql.contains("@start"));
 ```
 
-## 致谢
-
-- [huandu/go-sqlbuilder](https://github.com/huandu/go-sqlbuilder)：Rust 版本的设计和行为对齐自该项目。
-- [jzero](https://github.com/jzero-io/jzero)：链式条件与模板思路来源，并在示例中保持一致的使用体验。
-
 ### Struct ORM + field mapper
 
 ```rust
@@ -477,5 +472,10 @@ cargo test
 ## 许可证
 
 MIT
+
+## 致谢
+
+- [huandu/go-sqlbuilder](https://github.com/huandu/go-sqlbuilder)：Rust 版本的设计和行为对齐自该项目。
+- [jzero](https://github.com/jzero-io/jzero)：链式条件与模板思路来源，并在示例中保持一致的使用体验。
 
 
