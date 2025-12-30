@@ -822,7 +822,7 @@ enum InsertVerb {
 /// #[derive(Default)]
 /// struct User { id: i64, name: String }
 ///
-/// halo_space::sqlx::sql_struct! {
+/// halo_space::sqlbuilder::sql_struct! {
 ///   impl User {
 ///     id:  { db: "id", tags: ["pk"], omitempty: [], quote: false, as: None },
 ///     name:{ db: "name", tags: [],     omitempty: [""], quote: true,  as: None },

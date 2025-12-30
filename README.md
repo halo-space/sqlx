@@ -1,4 +1,4 @@
-# halo-sqlx 
+# halo-sqlbuilder 
 
 它是一个对齐 [huandu/go-sqlbuilder](https://github.com/huandu/go-sqlbuilder) 设计的 Rust crate，提供：
 
@@ -11,12 +11,17 @@
 - `SqlValuer`：支持延迟计算参数，兼容自定义数据源；
 - 全部示例/单测对齐 Go：138 条单测 + doc-test，覆盖 README 中的 builder、Struct、CTE、Union、field mapper、命名参数等场景。
 
+## 安装与导入
+
+- 安装：`cargo add halo-sqlbuilder`
+- 使用：`use halo_space::sqlbuilder::{...};`（向下兼容 `halo_space::sqlx::{...}`）
+
 ## 典型用法
 
 ### 创建 SELECT
 
 ```rust
-use halo_space::sqlx::{from_tables, select_cols, where_exprs, select::SelectBuilder};
+use halo_space::sqlbuilder::{from_tables, select_cols, where_exprs, select::SelectBuilder};
 
 let mut sb = SelectBuilder::new();
 select_cols!(sb, "id");
@@ -31,7 +36,7 @@ assert_eq!(args.len(), 3);
 ### 直接使用 builder API
 
 ```rust
-use halo_space::sqlx::select::SelectBuilder;
+use halo_space::sqlbuilder::select::SelectBuilder;
 
 let mut sb = SelectBuilder::new();
 sb.select("id") // 单列
@@ -53,11 +58,11 @@ assert!(sql.contains("FROM users, users_detail"));
 ### Condition / Chain 查询
 
 ```rust
-use halo_space::sqlx::condition::{
+use halo_space::sqlbuilder::condition::{
     build_select_with_flavor, Chain, ChainOptions, Condition, ConditionValue, Operator,
 };
-use halo_space::sqlx::select::SelectBuilder;
-use halo_space::sqlx::Flavor;
+use halo_space::sqlbuilder::select::SelectBuilder;
+use halo_space::sqlbuilder::Flavor;
 
 // 直接用 Condition 组合 OR
 let conditions = vec![
@@ -95,7 +100,7 @@ assert_eq!(args, vec!["jzero".into(), 24_i64.into(), 48_i64.into(), 170_i64.into
 let chain = Chain::new()
     .equal_opts("status", "active", ChainOptions::default().skip(false))
     .join(
-        halo_space::sqlx::JoinOption::InnerJoin,
+        halo_space::sqlbuilder::JoinOption::InnerJoin,
         "user_ext",
         ["user.id = user_ext.uid"],
     )
@@ -129,10 +134,10 @@ assert_eq!(args3, vec!["jzero".into()]);
 
 ### 变长参数宏
 
-宏（`select_cols!`、`from_tables!`、`where_exprs!`、`returning_cols!` 等）可直接从根导入：`use halo_space::sqlx::{select_cols, from_tables, where_exprs};`，自动把多个字符串/列名展开为 `Vec<String>`，无需手动构造切片。
+宏（`select_cols!`、`from_tables!`、`where_exprs!`、`returning_cols!` 等）可直接从根导入：`use halo_space::sqlbuilder::{select_cols, from_tables, where_exprs};`，自动把多个字符串/列名展开为 `Vec<String>`，无需手动构造切片。
 
 ```rust
-use halo_space::sqlx::{from_tables, order_by_cols, select_cols, where_exprs, select::SelectBuilder};
+use halo_space::sqlbuilder::{from_tables, order_by_cols, select_cols, where_exprs, select::SelectBuilder};
 
 let mut sb = SelectBuilder::new();
 select_cols!(sb, "id", "name");
@@ -149,7 +154,7 @@ assert!(sql.contains("WHERE"));
 ### INSERT / RETURNING
 
 ```rust
-use halo_space::sqlx::{insert::InsertBuilder, insert_cols, returning_cols};
+use halo_space::sqlbuilder::{insert::InsertBuilder, insert_cols, returning_cols};
 
 let mut ib = InsertBuilder::new();
 ib.insert_into("users");
@@ -164,7 +169,7 @@ assert_eq!(args.len(), 2);
 ### UPDATE / WHERE / ORDER BY
 
 ```rust
-use halo_space::sqlx::{update::UpdateBuilder, update_set, where_exprs, update_tables};
+use halo_space::sqlbuilder::{update::UpdateBuilder, update_set, where_exprs, update_tables};
 
 let mut ub = UpdateBuilder::new();
 update_tables!(ub, "users");
@@ -179,11 +184,11 @@ assert!(sql.contains("UPDATE users SET score = score + 1 WHERE status = 'active'
 ### Condition / Chain 更新
 
 ```rust
-use halo_space::sqlx::condition::{
+use halo_space::sqlbuilder::condition::{
     build_update_with_flavor, Chain, ConditionValue, Operator, UpdateFieldChain, UpdateFieldOptions,
 };
-use halo_space::sqlx::update::UpdateBuilder;
-use halo_space::sqlx::Flavor;
+use halo_space::sqlbuilder::update::UpdateBuilder;
+use halo_space::sqlbuilder::Flavor;
 
 let updates = UpdateFieldChain::new()
     .assign("name", "alice", UpdateFieldOptions::default())
@@ -202,7 +207,7 @@ assert!(sql.contains("WHERE `id` = ?"));
 ### DELETE / LIMIT
 
 ```rust
-use halo_space::sqlx::{delete::DeleteBuilder, delete_from_tables, where_exprs};
+use halo_space::sqlbuilder::{delete::DeleteBuilder, delete_from_tables, where_exprs};
 
 let mut db = DeleteBuilder::new();
 delete_from_tables!(db, "sessions");
@@ -216,7 +221,7 @@ assert!(sql.contains("DELETE FROM sessions WHERE expired_at < NOW() LIMIT ?"));
 ### 嵌套 Builder / Buildf
 
 ```rust
-use halo_space::sqlx::{builder::buildf, from_tables, select_cols, select::SelectBuilder};
+use halo_space::sqlbuilder::{builder::buildf, from_tables, select_cols, select::SelectBuilder};
 
 let mut sb = SelectBuilder::new();
 select_cols!(sb, "id");
@@ -233,7 +238,7 @@ assert!(sql.contains("EXPLAIN SELECT id FROM user"));
 ### named 参数
 
 ```rust
-use halo_space::sqlx::{
+use halo_space::sqlbuilder::{
     builder::build_named,
     modifiers::{SqlNamedArg, raw, list},
 };
@@ -259,10 +264,10 @@ assert!(sql.contains("@start"));
 ### Struct ORM + field mapper
 
 ```rust
-use halo_space::sqlx::{field_mapper::snake_case_mapper, Struct};
+use halo_space::sqlbuilder::{field_mapper::snake_case_mapper, Struct};
 
 // 启用 snake_case 映射
-let _guard = halo_space::sqlx::field_mapper::set_default_field_mapper_scoped(
+let _guard = halo_space::sqlbuilder::field_mapper::set_default_field_mapper_scoped(
     std::sync::Arc::new(snake_case_mapper),
 );
 
@@ -273,7 +278,7 @@ struct User {
 }
 
 // 使用 sql_struct! 生成字段元数据与取值逻辑
-halo_space::sqlx::sql_struct! {
+halo_space::sqlbuilder::sql_struct! {
     impl User {
         id:        { db: "id",  tags: [], omitempty: [], quote: false, as: None },
         user_name: { db: "",    tags: [], omitempty: [], quote: false, as: None },
@@ -288,7 +293,7 @@ assert!(sql.contains("user.user_name"));
 ### CTE 与 Union
 
 ```rust
-use halo_space::sqlx::{
+use halo_space::sqlbuilder::{
     cte::with,
     cte_query::CTEQueryBuilder,
     from_tables, select_cols, where_exprs,
@@ -313,7 +318,7 @@ assert!(sql.contains("WITH users"));
 ### UNION / UNION ALL
 
 ```rust
-use halo_space::sqlx::{union::UnionBuilder, select::SelectBuilder, select_cols, from_tables};
+use halo_space::sqlbuilder::{union::UnionBuilder, select::SelectBuilder, select_cols, from_tables};
 
 let mut sb1 = SelectBuilder::new();
 select_cols!(sb1, "id");
@@ -332,7 +337,7 @@ assert!(sql.contains("UNION ALL"));
 ### CREATE TABLE
 
 ```rust
-use halo_space::sqlx::{
+use halo_space::sqlbuilder::{
     create_table::CreateTableBuilder, create_table_define, create_table_option,
 };
 
@@ -348,7 +353,7 @@ assert!(sql.contains("CREATE TABLE"));
 ### Flavor 切换
 
 ```rust
-use halo_space::sqlx::{Flavor, select::SelectBuilder, select_cols, from_tables};
+use halo_space::sqlbuilder::{Flavor, select::SelectBuilder, select_cols, from_tables};
 
 let mut sb = SelectBuilder::new();
 select_cols!(sb, "id");
@@ -364,7 +369,7 @@ assert!(mysql_sql.contains("?")); // MySQL 占位符
 ### Args/占位符与命名参数
 
 ```rust
-use halo_space::sqlx::{builder::build_named, modifiers::{SqlNamedArg, list, raw}};
+use halo_space::sqlbuilder::{builder::build_named, modifiers::{SqlNamedArg, list, raw}};
 
 let mut named = std::collections::HashMap::new();
 named.insert("table".to_string(), raw("user"));
@@ -382,7 +387,7 @@ assert_eq!(args.len(), 0);   // named 参数不进入 args
 ### Build/Buildf 快速包装
 
 ```rust
-use halo_space::sqlx::builder::{build, buildf};
+use halo_space::sqlbuilder::builder::{build, buildf};
 
 let b1 = build("SELECT 1", ());
 assert_eq!(b1.build().0, "SELECT 1");
@@ -394,12 +399,12 @@ assert_eq!(b2.build().1.len(), 2);
 ### Struct/field mapper/with_tag
 
 ```rust
-use halo_space::sqlx::{field_mapper::snake_case_mapper, Struct};
-let _guard = halo_space::sqlx::field_mapper::set_default_field_mapper_scoped(
+use halo_space::sqlbuilder::{field_mapper::snake_case_mapper, Struct};
+let _guard = halo_space::sqlbuilder::field_mapper::set_default_field_mapper_scoped(
     std::sync::Arc::new(snake_case_mapper),
 );
 
-halo_space::sqlx::sql_struct! {
+halo_space::sqlbuilder::sql_struct! {
     impl User {
         id: { db: "id", tags: [], omitempty: [], quote: false, as: None },
         user_name: { db: "", tags: [], omitempty: [], quote: false, as: None }
@@ -415,7 +420,7 @@ assert!(sql.contains("user.user_name"));
 ### Scan/Addr 拿到结果
 
 ```rust
-use halo_space::sqlx::scan::{ScanCell, scan_tokens};
+use halo_space::sqlbuilder::scan::{ScanCell, scan_tokens};
 
 let tokens = vec!["id", "name", "42", "alice"];
 let mut cells = [ScanCell::default(); 2];
@@ -432,8 +437,8 @@ assert_eq!(name, "alice");
 ### interpolate（非参数化场景）
 
 ```rust
-use halo_space::sqlx::interpolate::interpolate_with_flavor;
-use halo_space::sqlx::Flavor;
+use halo_space::sqlbuilder::interpolate::interpolate_with_flavor;
+use halo_space::sqlbuilder::Flavor;
 
 let (sql, _args) = interpolate_with_flavor(
     "SELECT * FROM user WHERE name = ? AND score >= ?",
@@ -447,11 +452,11 @@ assert!(sql.contains("90"));
 ### SqlValuer 延迟取值
 
 ```rust
-use halo_space::sqlx::{valuer::SqlValuer, value::SqlValue};
+use halo_space::sqlbuilder::{valuer::SqlValuer, value::SqlValue};
 
 struct Now;
 impl SqlValuer for Now {
-    fn to_sql_value(&self) -> Result<SqlValue, halo_space::sqlx::valuer::ValuerError> {
+    fn to_sql_value(&self) -> Result<SqlValue, halo_space::sqlbuilder::valuer::ValuerError> {
         Ok(SqlValue::I64(1_700_000_000)) // 示例：返回当前时间戳
     }
 }
